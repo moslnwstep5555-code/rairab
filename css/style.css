@@ -1200,13 +1200,14 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
-/* 6-tab nav */
+/* 7-tab nav */
 .bottom-nav .nav-btn {
   min-width: 0;
   flex: 1;
-  padding: 4px 2px;
+  padding: 4px 1px;
 }
-.bottom-nav .nav-label { font-size: 10px; }
+.bottom-nav .nav-label { font-size: 9px; }
+.bottom-nav .nav-icon  { font-size: 20px; }
 
 /* === NOTES === */
 .note-add-box {
