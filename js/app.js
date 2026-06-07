@@ -1,7 +1,8 @@
 'use strict';
 
 // ==================== CONSTANTS ====================
-const STORAGE_KEY = 'rairab_v1';
+const APP_VERSION  = '1.3.0';
+const STORAGE_KEY  = 'rairab_v1';
 
 const EXPENSE_CATS = [
   { id: 'food',          name: 'อาหาร',     icon: '🍔' },
@@ -941,6 +942,8 @@ function renderSettingsPage() {
   const el = document.getElementById('theme-toggle');
   if (el) el.classList.toggle('on', document.documentElement.getAttribute('data-theme') === 'dark');
   updateNotifStatus();
+  const vEl = document.getElementById('app-version-footer');
+  if (vEl) vEl.innerHTML = `💰 รายรับรายจ่าย <strong>v${APP_VERSION}</strong><br><span style="font-size:11px">อัพเดทล่าสุด: 7 มิ.ย. 2569</span>`;
 }
 
 function confirmClearData() {
