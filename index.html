@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1565C0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="รายรับรายจ่าย">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>บันทึกรายรับรายจ่าย</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ============ PIN LOCK SCREEN ============ -->
+  <div id="pin-screen" class="pin-screen">
+    <div class="pin-logo">💰</div>
+    <div class="pin-title">รายรับรายจ่าย</div>
+    <div id="pin-subtitle" class="pin-subtitle">กรอก PIN เพื่อเข้าใช้งาน</div>
+    <div id="pin-dots" class="pin-dots">
+      <span class="dot"></span><span class="dot"></span>
+      <span class="dot"></span><span class="dot"></span>
+    </div>
+    <div id="pin-error" class="pin-error"></div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinInput('1')">1</button>
+      <button class="pin-btn" onclick="pinInput('2')">2</button>
+      <button class="pin-btn" onclick="pinInput('3')">3</button>
+      <button class="pin-btn" onclick="pinInput('4')">4</button>
+      <button class="pin-btn" onclick="pinInput('5')">5</button>
+      <button class="pin-btn" onclick="pinInput('6')">6</button>
+      <button class="pin-btn" onclick="pinInput('7')">7</button>
+      <button class="pin-btn" onclick="pinInput('8')">8</button>
+      <button class="pin-btn" onclick="pinInput('9')">9</button>
+      <div></div>
+      <button class="pin-btn" onclick="pinInput('0')">0</button>
+      <button class="pin-btn pin-del" onclick="pinDelete()">⌫</button>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: DASHBOARD ============ -->
+  <div id="page-dashboard" class="page active">
+    <div class="app-header">
+      <div class="header-title-row">
+        <div class="header-title">💰 รายรับรายจ่าย</div>
+        <button onclick="goTo('settings')" class="settings-icon-btn">⚙️</button>
+      </div>
+      <div class="month-selector">
+        <button id="btn-prev-month" class="month-nav-btn">‹</button>
+        <span id="current-month-label"></span>
+        <button id="btn-next-month" class="month-nav-btn">›</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="balance-card">
+        <div class="balance-label">ยอดคงเหลือ</div>
+        <div id="balance-amount" class="balance-amount">฿0</div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-card income">
+          <div class="summary-icon">📈</div>
+          <div class="summary-label">รายรับ</div>
+          <div id="income-amount" class="summary-amount">฿0</div>
+        </div>
+        <div class="summary-card expense">
+          <div class="summary-icon">📉</div>
+          <div class="summary-label">รายจ่าย</div>
+          <div id="expense-amount" class="summary-amount">฿0</div>
+        </div>
+      </div>
+
+      <!-- Govt Programs Card -->
+      <div id="govt-dash-card" class="loan-summary-card" onclick="goTo('govt')" style="border-left:4px solid #2E7D32">
+        <div class="loan-summary-header">
+          <span>🏛 โครงการรัฐ</span>
+          <span class="chevron">›</span>
+        </div>
+        <div id="govt-dash-content" class="govt-dash-content"></div>
+      </div>
+
+      <!-- Loan Summary Card -->
+      <div id="loan-summary-card" class="loan-summary-card" onclick="goTo('loans')">
+        <div class="loan-summary-header">
+          <span>🤝 ยืม/คืนเงิน</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="loan-summary-nums">
+          <div class="loan-stat lend">
+            <div class="loan-stat-label">ลูกหนี้ (คนมาขอยืม)</div>
+            <div id="lend-total" class="loan-stat-amount">฿0</div>
+            <div id="lend-count" class="loan-stat-count">0 รายการ</div>
+          </div>
+          <div class="loan-divider"></div>
+          <div class="loan-stat borrow">
+            <div class="loan-stat-label">เจ้าหนี้ (เราไปยืม)</div>
+            <div id="borrow-total" class="loan-stat-amount">฿0</div>
+            <div id="borrow-count" class="loan-stat-count">0 รายการ</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="budget-dashboard-section"></div>
+      <div class="chart-card">
+        <div class="chart-title">รายจ่ายตามหมวดหมู่</div>
+        <div id="pie-empty" class="chart-empty">ยังไม่มีรายจ่ายในเดือนนี้</div>
+        <canvas id="chart-pie" style="display:none"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">เปรียบเทียบ 6 เดือน</div>
+        <canvas id="chart-bar"></canvas>
+      </div>
+      <div id="demo-banner" class="demo-banner">
+        <span>📊 ยังไม่มีข้อมูล — ลองดูตัวอย่างก่อนได้เลย</span>
+        <button id="btn-load-demo" class="demo-btn">โหลดตัวอย่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: ADD TRANSACTION ============ -->
+  <div id="page-add" class="page">
+    <div class="page-header">
+      <h2>เพิ่มรายการ</h2>
+    </div>
+    <div class="content">
+      <div class="type-toggle">
+        <button class="type-btn active-expense" data-type="expense">💸 รายจ่าย</button>
+        <button class="type-btn" data-type="income">💰 รายรับ</button>
+      </div>
+      <div class="amount-wrapper">
+        <span class="baht-symbol">฿</span>
+        <input type="number" id="amount-input" class="amount-input"
+               placeholder="0" inputmode="decimal" min="0" step="0.01">
+      </div>
+      <div class="field-label">หมวดหมู่</div>
+      <div id="category-grid" class="category-grid"></div>
+      <div class="form-group">
+        <label class="form-label">วันที่</label>
+        <input type="date" id="date-input" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">บันทึก <span class="optional">(ไม่บังคับ)</span></label>
+        <input type="text" id="note-input" class="form-input" placeholder="รายละเอียดเพิ่มเติม...">
+      </div>
+      <button id="btn-save" class="save-btn expense">บันทึกรายจ่าย</button>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: LOANS ============ -->
+  <div id="page-loans" class="page">
+    <div class="page-header loans-header">
+      <h2>🤝 ยืม/คืนเงิน</h2>
+      <button id="btn-add-loan" class="header-add-btn">+ บันทึก</button>
+    </div>
+    <div class="content">
+      <div class="loan-tabs">
+        <button class="loan-tab active" data-ltab="active">⏳ ค้างอยู่</button>
+        <button class="loan-tab" data-ltab="done">✅ คืนแล้ว</button>
+      </div>
+      <div id="loan-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: ADD LOAN ============ -->
+  <div id="page-add-loan" class="page">
+    <div class="page-header with-back">
+      <button id="btn-back-loans" class="back-btn">‹</button>
+      <h2>บันทึกการยืมเงิน</h2>
+    </div>
+    <div class="content">
+      <div class="type-toggle" style="margin-top:16px">
+        <button class="type-btn active-lend" data-ltype="lend">🙋 คนมาขอยืม</button>
+        <button class="type-btn" data-ltype="borrow">🙇 เราไปยืม</button>
+      </div>
+      <div class="amount-wrapper">
+        <span class="baht-symbol">฿</span>
+        <input type="number" id="loan-amount" class="amount-input lend-color"
+               placeholder="0" inputmode="decimal" min="0" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ชื่อ</label>
+        <input type="text" id="loan-person" class="form-input" placeholder="ชื่อคนที่ยืม / เจ้าหนี้...">
+      </div>
+      <div class="date-row">
+        <div class="form-group" style="padding:0;margin:0">
+          <label class="form-label">วันที่ยืม</label>
+          <input type="date" id="loan-borrow-date" class="form-input">
+        </div>
+        <div class="form-group" style="padding:0;margin:0">
+          <label class="form-label">วันนัดคืน <span class="optional">(ถ้ามี)</span></label>
+          <input type="date" id="loan-due-date" class="form-input">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ดอกเบี้ยต่อเดือน <span class="optional">(ถ้ามี)</span></label>
+        <div class="interest-input-row">
+          <span class="interest-baht">฿</span>
+          <input type="number" id="loan-monthly-interest" class="form-input interest-input"
+                 placeholder="0" inputmode="decimal" min="0" step="0.01">
+          <span class="interest-unit">/เดือน</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">บันทึก <span class="optional">(ไม่บังคับ)</span></label>
+        <input type="text" id="loan-note" class="form-input" placeholder="รายละเอียดเพิ่มเติม...">
+      </div>
+      <button id="btn-save-loan" class="save-btn lend-save">💾 บันทึก (ให้ยืม)</button>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: SETTINGS ============ -->
+  <div id="page-settings" class="page">
+    <div class="page-header with-back">
+      <button onclick="goTo('dashboard')" class="back-btn">‹</button>
+      <h2>⚙️ ตั้งค่า</h2>
+    </div>
+    <div class="content">
+      <div class="settings-section">
+        <div class="settings-section-title">รูปแบบ</div>
+        <div class="settings-row" onclick="toggleTheme()">
+          <div class="settings-row-left"><span class="settings-icon">🌙</span><span>Dark Mode</span></div>
+          <div id="theme-toggle" class="settings-toggle"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">สำรองข้อมูล</div>
+        <div class="settings-row" onclick="exportJSON()">
+          <div class="settings-row-left"><span class="settings-icon">📤</span><span>Export ข้อมูล (JSON)</span></div>
+          <span class="settings-arrow">›</span>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-left"><span class="settings-icon">📥</span><span>Import ข้อมูล (JSON)</span></div>
+          <label for="import-file" class="settings-arrow" style="cursor:pointer">›</label>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
+        </div>
+        <div class="settings-row" onclick="exportCSV()">
+          <div class="settings-row-left"><span class="settings-icon">📊</span><span>Export รายการ (CSV/Excel)</span></div>
+          <span class="settings-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">การแจ้งเตือน</div>
+        <div class="settings-row" onclick="requestNotifPermission()">
+          <div class="settings-row-left"><span class="settings-icon">🔔</span><span>แจ้งเตือนยืมเงินใกล้ครบกำหนด</span></div>
+          <span id="notif-status" class="settings-status"></span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">รายการอัตโนมัติ</div>
+        <div class="settings-row" onclick="goTo('recurring')">
+          <div class="settings-row-left"><span class="settings-icon">📅</span><span>รายจ่ายประจำ</span></div>
+          <span class="settings-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">งบประมาณ</div>
+        <div class="settings-row" onclick="goTo('budget')">
+          <div class="settings-row-left"><span class="settings-icon">🎯</span><span>ตั้งงบประมาณรายหมวด</span></div>
+          <span class="settings-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">ข้อมูล</div>
+        <div class="settings-row" onclick="confirmClearData()">
+          <div class="settings-row-left"><span class="settings-icon">🗑</span><span style="color:#C62828">ลบข้อมูลทั้งหมด</span></div>
+          <span class="settings-arrow">›</span>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:12px;color:var(--text-muted);padding:24px 0 8px">รายรับรายจ่าย v1.0</div>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: BUDGET ============ -->
+  <div id="page-budget" class="page">
+    <div class="page-header with-back">
+      <button onclick="goTo('settings')" class="back-btn">‹</button>
+      <h2>🎯 งบประมาณ</h2>
+    </div>
+    <div class="content">
+      <div class="budget-info-box">กำหนดงบสูงสุดต่อเดือนสำหรับแต่ละหมวดรายจ่าย<br>เว้นว่างหมายถึงไม่จำกัด</div>
+      <div id="budget-form-list"></div>
+      <button id="btn-save-budget" class="save-btn income">💾 บันทึกงบประมาณ</button>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: RECURRING ============ -->
+  <div id="page-recurring" class="page">
+    <div class="page-header loans-header">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="goTo('settings')" class="back-btn">‹</button>
+        <h2>📅 รายการประจำ</h2>
+      </div>
+      <button id="btn-add-recurring" class="header-add-btn">+ เพิ่ม</button>
+    </div>
+    <div class="content">
+      <div id="recurring-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: ADD RECURRING ============ -->
+  <div id="page-add-recurring" class="page">
+    <div class="page-header with-back">
+      <button onclick="goTo('recurring')" class="back-btn">‹</button>
+      <h2>เพิ่มรายการประจำ</h2>
+    </div>
+    <div class="content">
+      <div class="type-toggle" style="margin-top:16px">
+        <button class="type-btn active-expense" data-rtype="expense">💸 รายจ่าย</button>
+        <button class="type-btn" data-rtype="income">💰 รายรับ</button>
+      </div>
+      <div class="amount-wrapper">
+        <span class="baht-symbol">฿</span>
+        <input type="number" id="rec-amount" class="amount-input expense-color"
+               placeholder="0" inputmode="decimal" min="0" step="0.01">
+      </div>
+      <div class="field-label">หมวดหมู่</div>
+      <div id="rec-cat-grid" class="category-grid"></div>
+      <div class="form-group">
+        <label class="form-label">เพิ่มทุกวันที่ <span class="optional">(1-28 ของเดือน)</span></label>
+        <input type="number" id="rec-day" class="form-input" value="1" min="1" max="28" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ชื่อ/รายละเอียด</label>
+        <input type="text" id="rec-note" class="form-input" placeholder="เช่น ค่าเน็ต, ค่าไฟ...">
+      </div>
+      <button id="btn-save-recurring" class="save-btn expense">💾 บันทึกรายการประจำ</button>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: GOVT PROGRAMS ============ -->
+  <div id="page-govt" class="page">
+    <div class="page-header loans-header">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="goTo('dashboard')" class="back-btn">‹</button>
+        <h2>🏛 โครงการรัฐ</h2>
+      </div>
+      <button id="btn-add-govprog" class="header-add-btn">+ เพิ่ม</button>
+    </div>
+    <div class="content">
+      <div id="govt-prog-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: ADD GOVT PROGRAM ============ -->
+  <div id="page-add-govprog" class="page">
+    <div class="page-header with-back">
+      <button id="btn-back-govprog" class="back-btn">‹</button>
+      <h2>เพิ่มโครงการ</h2>
+    </div>
+    <div class="content">
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">ชื่อโครงการ</label>
+        <input type="text" id="gp-name" class="form-input" placeholder="เช่น คนละครึ่ง...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">รัฐจ่าย (%) — เราจ่าย = 100 − รัฐ</label>
+        <input type="number" id="gp-gov-pct" class="form-input" value="50" min="1" max="99" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">วงเงินรัฐทั้งหมด (฿)</label>
+        <input type="number" id="gp-total" class="form-input" placeholder="เช่น 2000, 4000" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label class="form-label">วงเงินรัฐต่อวัน (฿) <span class="optional">(0 = ไม่จำกัด)</span></label>
+        <input type="number" id="gp-daily" class="form-input" placeholder="เช่น 200" inputmode="decimal" value="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">วงเงินรัฐต่อเดือน (฿) <span class="optional">(0 = ไม่จำกัด)</span></label>
+        <input type="number" id="gp-monthly" class="form-input" placeholder="เช่น 1000" inputmode="decimal" value="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">หมายเหตุ <span class="optional">(ไม่บังคับ)</span></label>
+        <input type="text" id="gp-note" class="form-input" placeholder="รายละเอียดโครงการ...">
+      </div>
+      <button id="btn-save-govprog" class="save-btn income">💾 บันทึกโครงการ</button>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: SPLIT BILLS ============ -->
+  <div id="page-split" class="page">
+    <div class="page-header split-header">
+      <h2>👫 หารกัน</h2>
+      <button id="btn-add-split" class="header-add-btn">+ เพิ่ม</button>
+    </div>
+    <div class="content">
+      <div id="split-summary-card" class="split-summary-card"></div>
+      <div class="loan-tabs">
+        <button class="loan-tab active" data-stab="pending">⏳ ค้างอยู่</button>
+        <button class="loan-tab" data-stab="done">✅ ชำระแล้ว</button>
+      </div>
+      <div id="split-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: ADD SPLIT ============ -->
+  <div id="page-add-split" class="page">
+    <div class="page-header with-back">
+      <button id="btn-back-split" class="back-btn">‹</button>
+      <h2>เพิ่มบิลร่วม</h2>
+    </div>
+    <div class="content">
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">ชื่อบิล</label>
+        <input type="text" id="split-name" class="form-input" placeholder="เช่น ค่าไฟ, ค่าน้ำ, 7-11...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ยอดรวม (฿)</label>
+        <input type="number" id="split-amount" class="form-input" placeholder="0.00" inputmode="decimal" min="0" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ใครจ่ายก่อน</label>
+        <div class="type-toggle" style="margin:0 0 4px">
+          <button class="type-btn active-me" data-paidby="me">🙋 ผม</button>
+          <button class="type-btn" data-paidby="spouse">👩 เมีย</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">แบ่งแบบไหน</label>
+        <div class="split-type-row">
+          <button class="split-type-btn active" data-stype="equal">50/50</button>
+          <button class="split-type-btn" data-stype="custom">กำหนดเอง</button>
+          <button class="split-type-btn" data-stype="none">ไม่แบ่ง</button>
+        </div>
+      </div>
+      <div id="custom-ratio-section" style="display:none">
+        <div class="ratio-row">
+          <div class="form-group ratio-item" style="margin-bottom:0;padding:0">
+            <label class="form-label">ผม (%)</label>
+            <input type="number" id="split-my-pct" class="form-input" value="50" min="0" max="100" inputmode="numeric">
+          </div>
+          <div class="form-group ratio-item" style="margin-bottom:0;padding:0">
+            <label class="form-label">เมีย (%)</label>
+            <input type="number" id="split-spouse-pct" class="form-input" value="50" min="0" max="100" inputmode="numeric">
+          </div>
+        </div>
+        <div id="ratio-preview" class="ratio-preview"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">วันที่</label>
+        <input type="date" id="split-date" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">โน้ต <span class="optional">(ไม่บังคับ)</span></label>
+        <input type="text" id="split-note" class="form-input" placeholder="รายละเอียด...">
+      </div>
+      <button id="btn-save-split" class="save-btn expense">💾 บันทึกบิล</button>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: NOTES ============ -->
+  <div id="page-notes" class="page">
+    <div class="page-header">
+      <h2>📝 จดกันลืม</h2>
+    </div>
+    <div class="content">
+      <div class="note-add-box">
+        <textarea id="note-text-input" class="note-textarea" placeholder="จดไว้กันลืม..." rows="3"></textarea>
+        <button id="btn-save-note" class="note-save-btn">+ บันทึก</button>
+      </div>
+      <div id="notes-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: HISTORY ============ -->
+  <div id="page-history" class="page">
+    <div class="page-header">
+      <h2>ประวัติรายการ</h2>
+    </div>
+    <div class="content">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="search-input" placeholder="ค้นหารายการ..." class="search-input">
+      </div>
+      <div id="transaction-list"></div>
+    </div>
+  </div>
+
+  <!-- ============ BOTTOM NAVIGATION (5 tabs) ============ -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-page="dashboard">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">สรุป</span>
+    </button>
+    <button class="nav-btn add-nav-btn" data-page="add">
+      <span class="nav-icon-add">➕</span>
+      <span class="nav-label">เพิ่ม</span>
+    </button>
+    <button class="nav-btn" data-page="loans">
+      <span class="nav-icon">🤝</span>
+      <span class="nav-label">ยืม/คืน</span>
+    </button>
+    <button class="nav-btn" data-page="split">
+      <span class="nav-icon">👫</span>
+      <span class="nav-label">หารกัน</span>
+    </button>
+    <button class="nav-btn" data-page="notes">
+      <span class="nav-icon">📝</span>
+      <span class="nav-label">โน้ต</span>
+    </button>
+    <button class="nav-btn" data-page="history">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">รายการ</span>
+    </button>
+  </nav>
+
+  <!-- MODAL: Transaction actions -->
+  <div id="modal-overlay" class="modal-overlay">
+    <div class="modal-sheet">
+      <div id="modal-info" class="modal-info"></div>
+      <button id="btn-delete" class="modal-btn danger">🗑 ลบรายการนี้</button>
+      <button id="btn-cancel-modal" class="modal-btn secondary">ยกเลิก</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Loan actions -->
+  <div id="loan-modal-overlay" class="modal-overlay">
+    <div class="modal-sheet">
+      <div id="loan-modal-info" class="modal-info"></div>
+      <button id="btn-pay-interest" class="modal-btn interest">💸 บันทึกดอกเบี้ย</button>
+      <button id="btn-pay-partial" class="modal-btn partial">💰 คืนบางส่วน</button>
+      <button id="btn-return-loan" class="modal-btn success">✅ คืนเงินแล้ว / รับคืนแล้ว</button>
+      <button id="btn-delete-loan" class="modal-btn danger">🗑 ลบรายการ</button>
+      <button id="btn-cancel-loan-modal" class="modal-btn secondary">ยกเลิก</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Record Payment -->
+  <div id="pay-modal-overlay" class="modal-overlay">
+    <div class="modal-sheet">
+      <div id="pay-modal-title" class="pay-modal-title"></div>
+      <div class="form-group">
+        <label class="form-label">จำนวนเงิน (฿)</label>
+        <input type="number" id="pay-amount-input" class="form-input"
+               placeholder="0.00" inputmode="decimal" min="0" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">วันที่</label>
+        <input type="date" id="pay-date-input" class="form-input">
+      </div>
+      <button id="btn-confirm-pay" class="modal-btn success">✅ บันทึก</button>
+      <button id="btn-cancel-pay" class="modal-btn secondary">ยกเลิก</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Govt Spending -->
+  <div id="govt-spend-modal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div id="govt-spend-header" class="pay-modal-title"></div>
+      <div class="form-group">
+        <label class="form-label">ยอดรวมที่จ่าย (฿)</label>
+        <input type="number" id="govt-spend-amount" class="form-input"
+               placeholder="0.00" inputmode="decimal" min="0" step="0.01">
+      </div>
+      <div id="govt-spend-breakdown" class="govt-breakdown"></div>
+      <div id="govt-spend-warning" class="govt-warning" style="display:none"></div>
+      <div class="form-group">
+        <label class="form-label">วันที่</label>
+        <input type="date" id="govt-spend-date" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">โน้ต <span class="optional">(ไม่บังคับ)</span></label>
+        <input type="text" id="govt-spend-note" class="form-input" placeholder="ซื้ออะไร...">
+      </div>
+      <button id="btn-confirm-govt-spend" class="modal-btn success">✅ บันทึกการใช้จ่าย</button>
+      <button id="btn-cancel-govt-spend" class="modal-btn secondary">ยกเลิก</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Split bill actions -->
+  <div id="split-modal-overlay" class="modal-overlay">
+    <div class="modal-sheet">
+      <div id="split-modal-info" class="modal-info"></div>
+      <button id="btn-settle-split" class="modal-btn success">✅ ชำระเงินแล้ว</button>
+      <button id="btn-delete-split" class="modal-btn danger">🗑 ลบรายการ</button>
+      <button id="btn-cancel-split-modal" class="modal-btn secondary">ยกเลิก</button>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
