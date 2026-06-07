@@ -1,4 +1,4 @@
-const CACHE = 'rairab-v1';
+const CACHE = 'rairab-v3';
 const ASSETS = [
   './index.html',
   './css/style.css',
